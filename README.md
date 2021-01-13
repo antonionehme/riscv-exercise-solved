@@ -28,23 +28,31 @@ We will use a (slightly modified) exercise from https://github.com/CTSRD-CHERI/c
  * Compile `buffer-overflow.c` to a RISC-V binary `buffer-overflow-hybrid` in hybrid capability mode (`riscv64-hybrid`). You can use the `ccc` script from `task/tools` (see the exercise docs for details) for that. What is the full commandline for compilation? 
  
  ```
- INSERT SOLUTION HERE
+ `sh tools/ccc riscv64-hybrid -G0 buffer-overflow.c -o buffer-overflow-hybrid`
  ```
  
  * There is a security flaw in `buffer-overflow.c`. Briefly explain what the flaw is: 
  
  ```
- INSERT SOLUTION HERE
+ The variable c was declared and assigned a value in memory straight after memset for the buffer. As a result, c will in stored in a register close to the buffer. Sending an input that is larger than the memory allocated to the buffer (16 in this case) leads to overriding the content of the adjacent memory addresses.
  ```
  
  * Start CHERI-RISC-V in QEMU, copy `buffer-overflow-hybrid` to the QEMU guest, and run it with a commandline argument that triggers the mentioned security flaw to overwrite the variable `c` with an attacker-controlled value. Give all the commands you have to run (assuming CHERI is in `~/cheri` and cheribuild in `~/cheribuild`):
  
   ```
-  INSERT SOLUTION HERE
+  `python3 cheribuild.py run-riscv64-hybrid /*to start the Qemu image*/`
+  `mount_smbfs -I 10.0.2.4 -N //10.0.2.4/source_root /mnt` to mount the CHERI base directory of the host on `/mnt`
+  `cd ../mnt/riscv-exervice/task`
+  `./buffer-overflow-hybrid '-----------------------A'` to replace c with 'A'
   ```
   
  * Now, compile the same program in pure capability mode (`riscv64-purecap`) to `buffer-overflow-purecap`. What happens when you run this program in QEMU with the same input that triggered the flaw in `buffer-overflow-hybrid`? Explain why this happens!
 
  ```
- INSERT SOLUTION HERE
+ The execution throws an error with `./buffer-overflow-purecap '-----------------------A'`:
+c = c
+In-address space security exception
+root@cheribsd-riscv64-hybrid:/mnt/riscv-exercise/task # Jan 13 14:22:55 cheribsd-riscv64-hybrid kernel: pid 733 (buffer-overflow-pur), uid (0): Failed to open coredump file 'buffer-overflow-pur.core', error=13
+
+This is because of the security checks in 
  ```
